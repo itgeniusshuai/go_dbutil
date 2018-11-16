@@ -3,6 +3,7 @@ package main
 import (
 	"../datasource"
 	"fmt"
+	"reflect"
 )
 
 func main(){
@@ -14,13 +15,18 @@ type User struct{
 	Name string `json:"name"`
 }
 func mainFunc(){
-	ds := datasource.GetDataSource("root","root","localhost",3306,"test")
+	var user User
+	t := reflect.ValueOf(user)
+	f := t.FieldByName("fsdf")
+	fmt.Println(f.IsValid())
+
+
+	ds := datasource.GetDataSource("root","123456","localhost",3306,"test")
 	sql := "select *from user where id = ?"
 	//resMap,err := ds.QueryOneMap(sql,1)
 	//if err != nil{
 	//	fmt.Println(err)
 	//}
-	var user User
 	//res,_ := ds.QueryOne(sql,&user,1)
 	res1,_ := ds.QueryMany(sql,&user,1)
 	//fmt.Println(res)

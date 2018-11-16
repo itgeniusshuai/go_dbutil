@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"github.com/itgeniusshuai/go_common/common"
 	"fmt"
-	"encoding/json"
+	"strings"
 )
 
 type ModelPtr interface{}
@@ -119,16 +119,17 @@ func fullMap(rows *sql.Rows) (map[string]interface{},error){
 
 // 将map中与结构体中对应的field对应上
 func mapToObj(m map[string]interface{},obj ModelPtr) ModelPtr{
-	objType := reflect.TypeOf(obj).Elem()
-	newObj := reflect.New(objType).Interface()
-	//newObjType := reflect.ValueOf(newObj).Elem()
+	objType := reflect.TypeOf(obj)
+	newObj := reflect.New(objType.Elem()).Interface()
+	newObjValue := reflect.ValueOf(newObj).Elem()
 
-	////取对象元素
-	//a:=reflect.TypeOf(obj).Elem()
-	////通过元素创建新对象
-	//newobj:=reflect.New(a).Interface()
-	jsonStr,_ := json.Marshal(m)
-	fmt.Println(string(jsonStr))
-	json.Unmarshal(jsonStr,&newObj)
+	for k,v := range m{
+		f := newObjValue.FieldByName(k)
+		if f.IsValid(){
+			f.Set(reflect.ValueOf(v))
+		}
+	}
+
 	return newObj
 }
+
