@@ -14,7 +14,7 @@ type User struct{
 	Name string `json:"name"`
 }
 func mainFunc(){
-	ds := datasource.GetDataSource("root","3108220w","localhost",3306,"test")
+	ds := datasource.GetDataSource("root","root","localhost",3306,"test")
 	sql := "select *from user where id = ?"
 	//resMap,err := ds.QueryOneMap(sql,1)
 	//if err != nil{
