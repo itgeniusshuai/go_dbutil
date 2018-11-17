@@ -6,10 +6,7 @@ import (
 	"reflect"
 	"github.com/itgeniusshuai/go_common/common"
 	"fmt"
-	"strings"
 )
-
-type ModelPtr interface{}
 
 func GetDataSource(user string,pwd string,ip string,port int,dbName string) *dataSource{
 	ds := dataSource{}
@@ -17,13 +14,13 @@ func GetDataSource(user string,pwd string,ip string,port int,dbName string) *dat
 	if err != nil{
 		panic(err.Error())
 	}
-	ds.db = db
+	ds.DB = db
 	return &ds
 }
 
 // 查询单个
 func (this *dataSource)QueryOne(sql string,obj ModelPtr,params ...interface{})(interface{},error){
-	rows,err := this.db.Query(sql,params...)
+	rows,err := this.Query(sql,params...)
 	if err != nil{
 		return nil,err
 	}
@@ -41,7 +38,7 @@ func (this *dataSource)QueryOne(sql string,obj ModelPtr,params ...interface{})(i
 // 查询单个
 func (this *dataSource)QueryOneMap(sql string,params ...interface{})(interface{},error){
 
-	rows,err := this.db.Query(sql,params...)
+	rows,err := this.Query(sql,params...)
 	if err != nil{
 		return nil,err
 	}
@@ -58,7 +55,7 @@ func (this *dataSource)QueryOneMap(sql string,params ...interface{})(interface{}
 
 // 查询多个
 func (this *dataSource)QueryMany(sql string,obj ModelPtr,params ...interface{})(interface{},error){
-	rows,err := this.db.Query(sql,params...)
+	rows,err := this.Query(sql,params...)
 	if err != nil{
 		return nil,err
 	}
@@ -73,7 +70,74 @@ func (this *dataSource)QueryMany(sql string,obj ModelPtr,params ...interface{})(
 
 // 查询多个
 func (this *dataSource)QueryManyMap(sql string,params ...interface{})(interface{},error){
-	rows,err := this.db.Query(sql,params)
+	rows,err := this.Query(sql,params)
+	if err != nil{
+		return nil,err
+	}
+	var resList []map[string]interface{}
+	for rows.Next(){
+		m,err := fullMap(rows)
+		if err != nil{
+			return nil,err
+		}
+		resList = append(resList, m)
+	}
+	return resList,nil
+}
+
+// 查询单个
+func (this *dataSource)QueryOneWitchTX(tx sql.Tx,sql string,obj ModelPtr,params ...interface{})(interface{},error){
+	rows,err := this.Query(sql,params...)
+	if err != nil{
+		return nil,err
+	}
+
+	if rows.Next(){
+		resMap,err := fullMap(rows)
+		if err != nil{
+			return nil,err
+		}
+		return mapToObj(resMap,obj),nil
+	}
+	return nil,nil
+}
+
+// 查询单个
+func (this *dataSource)QueryOneMapWithTX(tx *sql.Tx,sql string,params ...interface{})(interface{},error){
+
+	rows,err := this.Query(sql,params...)
+	if err != nil{
+		return nil,err
+	}
+	var resMap map[string]interface{}
+	if rows.Next(){
+		resMap,err = fullMap(rows)
+		if err != nil{
+			return nil,err
+		}
+	}
+	return resMap,nil
+}
+
+
+// 查询多个
+func (this *dataSource)QueryManyWithTx(tx *sql.Tx,sql string,obj ModelPtr,params ...interface{})(interface{},error){
+	rows,err := this.Query(sql,params...)
+	if err != nil{
+		return nil,err
+	}
+	var resList []ModelPtr
+	for rows.Next(){
+		m := fullObj(obj,rows)
+		fmt.Println(m)
+		resList = append(resList, m)
+	}
+	return resList,nil
+}
+
+// 查询多个
+func (this *dataSource)QueryManyMapWithTx(tx *sql.Tx,sql string,params ...interface{})(interface{},error){
+	rows,err := tx.Query(sql,params)
 	if err != nil{
 		return nil,err
 	}
