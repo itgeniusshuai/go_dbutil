@@ -15,22 +15,26 @@ func (this *dataSource) InsertOne(sql string,params ...interface{})(int64,error)
 }
 
 
-//func (this *dataSource) InsertOneObjSelective(sql string,obj interface{})(int64,error){
-//	colNames,err := parse.ParseInsertSql(sql)
-//	if err != nil{
-//		return 0,err
-//	}
-//	var params = make([]interface{},0)
-//	tagMap := common.GetStructTag(obj,"col")
-//	if err != nil{
-//		return 0,err
-//	}
-//	for _,colName := range colNames{
-//		// 如果tag活着名称相同获取值否则赋值为空
-//		common.IndexOfStrArr(colNames,colName)
-//	}
-//	return 0,nil
-//}
+func (this *dataSource) InsertOneObj(sql string,obj interface{})(int64,error){
+	sqlColNames,err := parse.ParseInsertSql(sql)
+	if err != nil{
+		return 0,err
+	}
+	var params = make([]interface{},0)
+	if err != nil{
+		return 0,err
+	}
+	// 参数对象值
+	for _,sqlColName := range sqlColNames{
+		// 如果tag活着名称相同获取值否则赋值为空
+		fv := common.GetValueByField(obj,sqlColName)
+		if fv == nil{
+			fv = common.GetFieldValueByFieldTag(obj,"col",sqlColName)
+		}
+		params = append(params, fv)
+	}
+	return 0,nil
+}
 
 func (this *dataSource) InsertOneMap(sql string,paramMap map[string]interface{})(int64,error){
 	colNames,err := parse.ParseInsertSql(sql)
