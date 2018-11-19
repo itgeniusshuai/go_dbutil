@@ -3,26 +3,35 @@ package datasource
 import (
 	"../parse"
 	"github.com/itgeniusshuai/go_common/common"
+	"database/sql"
 )
 
 
 func (this *dataSource) InsertOne(sql string,params ...interface{})(int64,error){
-	res,err := this.Exec(sql,params)
+	res,err := this.Exec(sql,params...)
 	if err != nil{
-		return 0,err
+		return -1,err
 	}
-	return res.RowsAffected()
+	return res.LastInsertId()
+}
+
+func (this *dataSource) InsertOneWithTX(tx *sql.Tx,sql string,params ...interface{})(int64,error){
+	res,err := tx.Exec(sql,params...)
+	if err != nil{
+		return -1,err
+	}
+	return res.LastInsertId()
 }
 
 
 func (this *dataSource) InsertOneObj(sql string,obj interface{})(int64,error){
 	sqlColNames,err := parse.ParseInsertSql(sql)
 	if err != nil{
-		return 0,err
+		return -1,err
 	}
 	var params = make([]interface{},0)
 	if err != nil{
-		return 0,err
+		return -1,err
 	}
 	// 参数对象值
 	for _,sqlColName := range sqlColNames{
@@ -39,7 +48,7 @@ func (this *dataSource) InsertOneObj(sql string,obj interface{})(int64,error){
 func (this *dataSource) InsertOneMap(sql string,paramMap map[string]interface{})(int64,error){
 	colNames,err := parse.ParseInsertSql(sql)
 	if err != nil{
-		return 0,err
+		return -1,err
 	}
 	var params = make([]interface{},0)
 	for _,colName := range colNames{

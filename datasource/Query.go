@@ -87,7 +87,7 @@ func (this *dataSource)QueryManyMap(sql string,params ...interface{})(interface{
 
 // 查询单个
 func (this *dataSource)QueryOneWitchTX(tx sql.Tx,sql string,obj ModelPtr,params ...interface{})(interface{},error){
-	rows,err := this.Query(sql,params...)
+	rows,err := tx.Query(sql,params...)
 	if err != nil{
 		return nil,err
 	}
@@ -105,7 +105,7 @@ func (this *dataSource)QueryOneWitchTX(tx sql.Tx,sql string,obj ModelPtr,params 
 // 查询单个
 func (this *dataSource)QueryOneMapWithTX(tx *sql.Tx,sql string,params ...interface{})(interface{},error){
 
-	rows,err := this.Query(sql,params...)
+	rows,err := tx.Query(sql,params...)
 	if err != nil{
 		return nil,err
 	}
@@ -122,7 +122,7 @@ func (this *dataSource)QueryOneMapWithTX(tx *sql.Tx,sql string,params ...interfa
 
 // 查询多个
 func (this *dataSource)QueryManyWithTx(tx *sql.Tx,sql string,obj ModelPtr,params ...interface{})(interface{},error){
-	rows,err := this.Query(sql,params...)
+	rows,err := tx.Query(sql,params...)
 	if err != nil{
 		return nil,err
 	}
