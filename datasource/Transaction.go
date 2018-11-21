@@ -6,10 +6,42 @@ import (
 	"github.com/kataras/iris/core/errors"
 	"database/sql"
 	"sync"
+	"time"
 )
 // 暂不支持事务嵌套
 
+func init(){
+	// 防止泄露检查
+	txMap = make(map[int][]*sql.Tx,0)
+	go func(){
+		for t := range time.Tick(time.Second * 2) {
+			fmt.Println(t)
+			deleteKeys := make([]int,0)
+			for k,_ := range txMap{
+				startTime := txTimeMap[k]
+				currTime := time.Now().Second()
+				if startTime == 0{
+					deleteKeys = append(deleteKeys, k)
+				}else if currTime - 60*60 > startTime{
+					deleteKeys = append(deleteKeys, k)
+					delete(txTimeMap,k)
+				}
+			}
+			if len(deleteKeys) > 0 {
+				for _,k := range deleteKeys{
+					txs := txMap[k]
+					if txs != nil{
+						txs = nil
+					}
+					delete(txMap,k)
+				}
+			}
+		}
+	}()
+}
+
 var txMap map[int][]*sql.Tx
+var txTimeMap map[int]int
 var txLock sync.RWMutex
 
 func GetCurrentTX()[]*sql.Tx{
@@ -26,6 +58,7 @@ func PutTX(routineId int,tx *sql.Tx) []*sql.Tx{
 		txs = append(txs, tx)
 		return txMap[routineId]
 	}
+	txTimeMap[routineId] = time.Now().Second()
 	txMap[routineId] = append(txMap[routineId], tx)
 	return txMap[routineId]
 }
