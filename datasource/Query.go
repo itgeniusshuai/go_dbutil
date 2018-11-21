@@ -20,6 +20,10 @@ func GetDataSource(user string,pwd string,ip string,port int,dbName string) *dat
 
 // 查询单个
 func (this *dataSource)QueryOne(sql string,obj ModelPtr,params ...interface{})(interface{},error){
+	tx := GetFistUnNilTX()
+	if tx != nil{
+		return this.QueryOneWitchTX(tx,sql,obj,params...)
+	}
 	rows,err := this.Query(sql,params...)
 	if err != nil{
 		return nil,err
@@ -37,7 +41,10 @@ func (this *dataSource)QueryOne(sql string,obj ModelPtr,params ...interface{})(i
 
 // 查询单个
 func (this *dataSource)QueryOneMap(sql string,params ...interface{})(interface{},error){
-
+	tx := GetFistUnNilTX()
+	if tx != nil{
+		return this.QueryOneMapWithTX(tx,sql,params...)
+	}
 	rows,err := this.Query(sql,params...)
 	if err != nil{
 		return nil,err
@@ -55,6 +62,10 @@ func (this *dataSource)QueryOneMap(sql string,params ...interface{})(interface{}
 
 // 查询多个
 func (this *dataSource)QueryMany(sql string,obj ModelPtr,params ...interface{})(interface{},error){
+	tx := GetFistUnNilTX()
+	if tx != nil{
+		return this.QueryManyWithTx(tx,sql,obj,params...)
+	}
 	rows,err := this.Query(sql,params...)
 	if err != nil{
 		return nil,err
@@ -70,6 +81,10 @@ func (this *dataSource)QueryMany(sql string,obj ModelPtr,params ...interface{})(
 
 // 查询多个
 func (this *dataSource)QueryManyMap(sql string,params ...interface{})(interface{},error){
+	tx := GetFistUnNilTX()
+	if tx != nil{
+		return this.QueryManyMapWithTx(tx,sql,params...)
+	}
 	rows,err := this.Query(sql,params)
 	if err != nil{
 		return nil,err
@@ -86,7 +101,7 @@ func (this *dataSource)QueryManyMap(sql string,params ...interface{})(interface{
 }
 
 // 查询单个
-func (this *dataSource)QueryOneWitchTX(tx sql.Tx,sql string,obj ModelPtr,params ...interface{})(interface{},error){
+func (this *dataSource)QueryOneWitchTX(tx *sql.Tx,sql string,obj ModelPtr,params ...interface{})(interface{},error){
 	rows,err := tx.Query(sql,params...)
 	if err != nil{
 		return nil,err

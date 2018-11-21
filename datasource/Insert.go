@@ -8,6 +8,10 @@ import (
 
 
 func (this *dataSource) InsertOne(sql string,params ...interface{})(int64,error){
+	tx := GetFistUnNilTX()
+	if tx != nil{
+		return this.InsertOneWithTX(tx,sql,params...)
+	}
 	res,err := this.Exec(sql,params...)
 	if err != nil{
 		return -1,err
@@ -42,7 +46,7 @@ func (this *dataSource) InsertOneObj(sql string,obj interface{})(int64,error){
 		}
 		params = append(params, fv)
 	}
-	return 0,nil
+	return this.InsertOne(sql,params...)
 }
 
 func (this *dataSource) InsertOneMap(sql string,paramMap map[string]interface{})(int64,error){

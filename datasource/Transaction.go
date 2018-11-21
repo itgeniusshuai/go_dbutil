@@ -136,5 +136,18 @@ func (this *dataSource)getTxByPropagation(propagation PROPAGATION) (*sql.Tx,erro
 	return tx,err
 }
 
+func GetFistUnNilTX() *sql.Tx{
+	txs := GetCurrentTX()
+	// 如果不为空找到第一个不为空的事务执行
+	if txs != nil && len(txs)>1{
+		for i := len(txs)-1; i >0; i--{
+			if txs[i] != nil{
+				return txs[i]
+			}
+		}
+	}
+	return nil
+}
+
 
 
