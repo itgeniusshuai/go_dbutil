@@ -12,3 +12,9 @@ type dataSource struct{
 
 type ModelPtr interface{}
 
+type PROPAGATION int
+const (
+	PROPAGATION_REQUIRED PROPAGATION = iota
+	PROPAGATION_NEW
+	PROPAGATION_NESTED
+	)
