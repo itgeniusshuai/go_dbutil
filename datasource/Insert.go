@@ -61,3 +61,4 @@ func (this *dataSource) InsertOneMap(sql string,paramMap map[string]interface{})
 	return this.InsertOne(sql,params...)
 }
 
+
