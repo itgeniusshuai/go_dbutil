@@ -8,14 +8,14 @@ import (
 	"strings"
 )
 
-func (this *dataSource)Update(sql string,params ...interface{})(int64,error) {
+func (this *dataSource)Update(sqlStr string,params ...interface{})(int64,error) {
 	var err error
 	var res sql.Result
 	tx := GetFistUnNilTX()
 	if tx == nil{
-		res,err = tx.Exec(sql,params...)
+		res,err = tx.Exec(sqlStr,params...)
 	}else {
-		res, err = this.Exec(sql, params...)
+		res, err = this.Exec(sqlStr, params...)
 	}
 	if err !=  nil{
 		return 0,err
@@ -46,14 +46,14 @@ func (this *dataSource)UpdateSelectiveBySelect(tableName string,objMap map[strin
 	}
 	sqlBuf.WriteString(strings.Join(updateStrBuf,","))
 	sqlBuf.WriteString(strings.Join(whereStrBuf," and "))
-	sql := sqlBuf.String()
+	sqlStr := sqlBuf.String()
 	var err error
 	var res sql.Result
 	tx := GetFistUnNilTX()
 	if tx == nil{
-		res,err = tx.Exec(sql,params...)
+		res,err = tx.Exec(sqlStr,params...)
 	}else {
-		res, err = this.Exec(sql, params...)
+		res, err = this.Exec(sqlStr, params...)
 	}
 	if err !=  nil{
 		return 0,err

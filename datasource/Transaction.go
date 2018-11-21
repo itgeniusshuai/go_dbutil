@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"sync"
 	"time"
+	"reflect"
 )
 // 暂不支持事务嵌套
 
@@ -147,6 +148,15 @@ func GetFistUnNilTX() *sql.Tx{
 		}
 	}
 	return nil
+}
+
+func FullTranResult(res []interface{},fRes ...interface{})  {
+	for i,e := range res{
+		if e != nil{
+			var fs = fRes[i]
+			reflect.ValueOf(fs).Elem().Set(reflect.ValueOf(e))
+		}
+	}
 }
 
 
