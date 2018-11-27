@@ -208,7 +208,6 @@ func mapToObj(m map[string]interface{},obj ModelPtr) ModelPtr{
 			f.Set(reflect.ValueOf(v))
 		}
 	}
-
 	return newObj
 }
 
