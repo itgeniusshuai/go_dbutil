@@ -76,7 +76,7 @@ func DeleteTX(routineId int){
 	}
 }
 
-func (this *dataSource)TranFuncExec( s interface{},propagation PROPAGATION,params ...interface{})(res []interface{},err error){
+func (this *DataSource)TranFuncExec( s interface{},propagation PROPAGATION,params ...interface{})(res []interface{},err error){
 	// 如果是
 	routineId := common.GetGoroutineId()
 	tx,err  := this.getTxByPropagation(propagation)
@@ -106,7 +106,7 @@ func (this *dataSource)TranFuncExec( s interface{},propagation PROPAGATION,param
 	return res,err
 }
 
-func (this *dataSource)getTxByPropagation(propagation PROPAGATION) (*sql.Tx,error){
+func (this *DataSource)getTxByPropagation(propagation PROPAGATION) (*sql.Tx,error){
 	routineId := common.GetGoroutineId()
 	var tx *sql.Tx
 	var err error

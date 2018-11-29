@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func (this *dataSource)Update(sqlStr string,params ...interface{})(int64,error) {
+func (this *DataSource)Update(sqlStr string,params ...interface{})(int64,error) {
 	var err error
 	var res sql.Result
 	tx := GetFistUnNilTX()
@@ -23,7 +23,7 @@ func (this *dataSource)Update(sqlStr string,params ...interface{})(int64,error) 
 	return res.RowsAffected()
 }
 
-func (this *dataSource)UpdateSelectiveBySelect(tableName string,objMap map[string]interface{},whereMap map[string]interface{},params ...interface{})(int64,error) {
+func (this *DataSource)UpdateSelectiveBySelect(tableName string,objMap map[string]interface{},whereMap map[string]interface{},params ...interface{})(int64,error) {
 	var sqlBuf bytes.Buffer
 	sqlBuf.WriteString(" udpate ")
 	sqlBuf.WriteString(tableName)

@@ -7,7 +7,7 @@ import (
 )
 
 
-func (this *dataSource) InsertOne(sql string,params ...interface{})(int64,error){
+func (this *DataSource) InsertOne(sql string,params ...interface{})(int64,error){
 	tx := GetFistUnNilTX()
 	if tx != nil{
 		return this.InsertOneWithTX(tx,sql,params...)
@@ -19,7 +19,7 @@ func (this *dataSource) InsertOne(sql string,params ...interface{})(int64,error)
 	return res.LastInsertId()
 }
 
-func (this *dataSource) InsertOneWithTX(tx *sql.Tx,sql string,params ...interface{})(int64,error){
+func (this *DataSource) InsertOneWithTX(tx *sql.Tx,sql string,params ...interface{})(int64,error){
 	res,err := tx.Exec(sql,params...)
 	if err != nil{
 		return -1,err
@@ -28,7 +28,7 @@ func (this *dataSource) InsertOneWithTX(tx *sql.Tx,sql string,params ...interfac
 }
 
 
-func (this *dataSource) InsertOneObj(sql string,obj interface{})(int64,error){
+func (this *DataSource) InsertOneObj(sql string,obj interface{})(int64,error){
 	sqlColNames,err := parse.ParseInsertSql(sql)
 	if err != nil{
 		return -1,err
@@ -49,7 +49,7 @@ func (this *dataSource) InsertOneObj(sql string,obj interface{})(int64,error){
 	return this.InsertOne(sql,params...)
 }
 
-func (this *dataSource) InsertOneMap(sql string,paramMap map[string]interface{})(int64,error){
+func (this *DataSource) InsertOneMap(sql string,paramMap map[string]interface{})(int64,error){
 	colNames,err := parse.ParseInsertSql(sql)
 	if err != nil{
 		return -1,err

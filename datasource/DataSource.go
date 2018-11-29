@@ -2,7 +2,7 @@ package datasource
 
 import "database/sql"
 
-type dataSource struct{
+type DataSource struct{
 	*sql.DB
 	Name string
 	User string
