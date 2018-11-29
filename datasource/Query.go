@@ -85,7 +85,7 @@ func (this *DataSource)QueryManyMap(sql string,params ...interface{})([]map[stri
 	if tx != nil{
 		return this.QueryManyMapWithTx(tx,sql,params...)
 	}
-	rows,err := this.Query(sql,params)
+	rows,err := this.Query(sql,params...)
 	if err != nil{
 		return nil,err
 	}
@@ -118,7 +118,7 @@ func (this *DataSource)QueryOneWitchTX(tx *sql.Tx,sql string,obj ModelPtr,params
 }
 
 // 查询单个
-func (this *DataSource)QueryOneMapWithTX(tx *sql.Tx,sql string,params ...interface{})(interface{},error){
+func (this *DataSource)QueryOneMapWithTX(tx *sql.Tx,sql string,params ...interface{})(map[string]interface{},error){
 
 	rows,err := tx.Query(sql,params...)
 	if err != nil{
@@ -151,7 +151,7 @@ func (this *DataSource)QueryManyWithTx(tx *sql.Tx,sql string,obj ModelPtr,params
 }
 
 // 查询多个
-func (this *DataSource)QueryManyMapWithTx(tx *sql.Tx,sql string,params ...interface{})(interface{},error){
+func (this *DataSource)QueryManyMapWithTx(tx *sql.Tx,sql string,params ...interface{})([]map[string]interface{},error){
 	rows,err := tx.Query(sql,params)
 	if err != nil{
 		return nil,err
@@ -165,6 +165,22 @@ func (this *DataSource)QueryManyMapWithTx(tx *sql.Tx,sql string,params ...interf
 		resList = append(resList, m)
 	}
 	return resList,nil
+}
+
+func (this *DataSource)QueryNum(sqlStr string,params ...interface{})(int64,error){
+	tx := GetFistUnNilTX()
+	var err error
+	var num int64
+	var rows *sql.Rows
+	if tx != nil{
+		rows,err = this.Query(sqlStr,params...)
+	}else{
+		rows,err = this.Query(sqlStr,params...)
+	}
+	if rows.Next(){
+		rows.Scan(&num)
+	}
+	return num,err
 }
 
 

@@ -1,9 +1,9 @@
 package datasource
 
 import (
-	"../parse"
 	"github.com/itgeniusshuai/go_common/common"
 	"database/sql"
+	"github.com/itgeniusshuai/go_dbutil/parse"
 )
 
 
