@@ -4,8 +4,10 @@ import (
  	_ "github.com/go-sql-driver/mysql"
 	"database/sql"
 	"reflect"
-	"github.com/itgeniusshuai/go_common/common"
 	"fmt"
+	"strings"
+	"github.com/itgeniusshuai/go_common/common"
+	"time"
 )
 
 func GetDataSource(user string,pwd string,ip string,port int,dbName string) *DataSource{
@@ -28,9 +30,9 @@ func (this *DataSource)QueryOne(sql string,obj ModelPtr,params ...interface{})(i
 	if err != nil{
 		return nil,err
 	}
-
+	types,_ := rows.ColumnTypes()
 	if rows.Next(){
-		resMap,err := fullMap(rows)
+		resMap,err := fullMap(rows,types)
 		if err != nil{
 			return nil,err
 		}
@@ -49,9 +51,10 @@ func (this *DataSource)QueryOneMap(sql string,params ...interface{})(interface{}
 	if err != nil{
 		return nil,err
 	}
+	types,_ := rows.ColumnTypes()
 	var resMap map[string]interface{}
 	if rows.Next(){
-		resMap,err = fullMap(rows)
+		resMap,err = fullMap(rows,types)
 		if err != nil{
 			return nil,err
 		}
@@ -89,9 +92,10 @@ func (this *DataSource)QueryManyMap(sql string,params ...interface{})([]map[stri
 	if err != nil{
 		return nil,err
 	}
+	types,_ := rows.ColumnTypes()
 	var resList []map[string]interface{}
 	for rows.Next(){
-		m,err := fullMap(rows)
+		m,err := fullMap(rows,types)
 		if err != nil{
 			return nil,err
 		}
@@ -106,9 +110,9 @@ func (this *DataSource)QueryOneWitchTX(tx *sql.Tx,sql string,obj ModelPtr,params
 	if err != nil{
 		return nil,err
 	}
-
+	types,_ := rows.ColumnTypes()
 	if rows.Next(){
-		resMap,err := fullMap(rows)
+		resMap,err := fullMap(rows,types)
 		if err != nil{
 			return nil,err
 		}
@@ -125,8 +129,9 @@ func (this *DataSource)QueryOneMapWithTX(tx *sql.Tx,sql string,params ...interfa
 		return nil,err
 	}
 	var resMap map[string]interface{}
+	types,_ := rows.ColumnTypes()
 	if rows.Next(){
-		resMap,err = fullMap(rows)
+		resMap,err = fullMap(rows,types)
 		if err != nil{
 			return nil,err
 		}
@@ -157,8 +162,9 @@ func (this *DataSource)QueryManyMapWithTx(tx *sql.Tx,sql string,params ...interf
 		return nil,err
 	}
 	var resList []map[string]interface{}
+	types,_ := rows.ColumnTypes()
 	for rows.Next(){
-		m,err := fullMap(rows)
+		m,err := fullMap(rows,types)
 		if err != nil{
 			return nil,err
 		}
@@ -185,24 +191,77 @@ func (this *DataSource)QueryNum(sqlStr string,params ...interface{})(int64,error
 
 
 func fullObj(obj ModelPtr,rows *sql.Rows) ModelPtr{
-	resMap,err := fullMap(rows)
+	types,_ := rows.ColumnTypes()
+	resMap,err := fullMap(rows,types)
 	if err != nil{
 		return nil
 	}
 	return mapToObj(resMap,obj)
 }
 
-func fullMap(rows *sql.Rows) (map[string]interface{},error){
+func fullMap(rows *sql.Rows,types []*sql.ColumnType) (map[string]interface{},error){
 	columns,err := rows.Columns()
 	if err != nil{
 		return nil,err
 	}
-	fmt.Println(columns)
 	var columnNum = len(columns)
 	var resList = make([]interface{},columnNum)
 	values := make([]interface{}, len(columns))
+
+	for i,_ := range values{
+		fmt.Println(types[i].ScanType().String())
+		typeName := types[i].ScanType().String()
+		if typeName == "sql.RawBytes"{
+			var str = ""
+			values[i] = &str
+		}else if typeName=="mysql.NullTime"{
+			var t time.Time
+			values[i] = &t
+		}else if strings.HasPrefix(typeName,"sql.NullInt"){
+			var t  interface{}
+			values[i] = &t
+		}else if typeName == "int8"{
+			var t int8
+			values[i] = &t
+		}else if typeName == "int16"{
+			var t int16
+			values[i] = &t
+		}else if typeName == "int32"{
+			var t int32
+			values[i] = &t
+		}else if typeName == "int64"{
+			var t int64
+			values[i] = &t
+		}else if typeName == "int"{
+			var t int8
+			values[i] = &t
+		}else if typeName == "uint"{
+			var t uint
+			values[i] = &t
+		}else if typeName == "uint8"{
+			var t uint8
+			values[i] = &t
+		}else if typeName == "uint16"{
+			var t uint16
+			values[i] = &t
+		}else if typeName == "uint32"{
+			var t int32
+			values[i] = &t
+		}else if typeName == "uint64"{
+			var t int64
+			values[i] = &t
+		}else if typeName == "float32"{
+			var t float32
+			values[i] = &t
+		}else if typeName == "float64"{
+			var t float64
+			values[i] = &t
+		}else{
+			values[i] = reflect.New(types[i].ScanType()).Interface()
+		}
+	}
 	for i := range values {
-		resList[i] = &values[i]
+		resList[i] = values[i]
 	}
 	rows.Scan(resList...)
 	var resMap = make(map[string]interface{})
@@ -225,5 +284,27 @@ func mapToObj(m map[string]interface{},obj ModelPtr) ModelPtr{
 		}
 	}
 	return newObj
+}
+
+func InterfaceToValue(v interface{},t *sql.ColumnType) interface{}{
+	var result = v
+	fmt.Println(t.DatabaseTypeName())
+	dbType := strings.ToLower(t.DatabaseTypeName())
+	switch dbType {
+	case "int":result = v.(int);break;
+	case "int8":result = v.(int8);break;
+	case "int16":result = v.(int16);break;
+	case "int32":result = v.(int32);break;
+	case "int64":result = v.(int64);break;
+	case "uint":result = v.(uint);break;
+	case "uint8":result = v.(uint8);break;
+	case "uint16":result = v.(uint16);break;
+	case "uint32":result = v.(uint32);break;
+	case "uint64":result = v.(uint64);break;
+	case "string":result = v.(string);break;
+	case "float32":result = v.(float32);break;
+	case "float64":result = v.(float64);break;
+	}
+	return result
 }
 
