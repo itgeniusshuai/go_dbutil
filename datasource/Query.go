@@ -209,7 +209,6 @@ func fullMap(rows *sql.Rows,types []*sql.ColumnType) (map[string]interface{},err
 	values := make([]interface{}, len(columns))
 
 	for i,_ := range values{
-		fmt.Println(types[i].ScanType().String())
 		typeName := types[i].ScanType().String()
 		if typeName == "sql.RawBytes"{
 			var str = ""
