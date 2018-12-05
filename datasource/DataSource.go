@@ -18,3 +18,8 @@ const (
 	PROPAGATION_NEW
 	PROPAGATION_NESTED
 	)
+
+const (
+	DB_STRUCT_TAG string = "db"
+)
+

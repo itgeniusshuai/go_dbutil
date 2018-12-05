@@ -21,7 +21,7 @@ func GetDataSource(user string,pwd string,ip string,port int,dbName string) *Dat
 }
 
 // 查询单个
-func (this *DataSource)QueryOne(sql string,obj ModelPtr,params ...interface{})(interface{},error){
+func (this *DataSource)QueryOne(sql string,obj ModelPtr,params ...interface{})(ModelPtr,error){
 	tx := GetFistUnNilTX()
 	if tx != nil{
 		return this.QueryOneWitchTX(tx,sql,obj,params...)
@@ -42,7 +42,7 @@ func (this *DataSource)QueryOne(sql string,obj ModelPtr,params ...interface{})(i
 }
 
 // 查询单个
-func (this *DataSource)QueryOneMap(sql string,params ...interface{})(interface{},error){
+func (this *DataSource)QueryOneMap(sql string,params ...interface{})(map[string]interface{},error){
 	tx := GetFistUnNilTX()
 	if tx != nil{
 		return this.QueryOneMapWithTX(tx,sql,params...)
@@ -64,7 +64,7 @@ func (this *DataSource)QueryOneMap(sql string,params ...interface{})(interface{}
 
 
 // 查询多个
-func (this *DataSource)QueryMany(sql string,obj ModelPtr,params ...interface{})(interface{},error){
+func (this *DataSource)QueryMany(sql string,obj ModelPtr,params ...interface{})([]ModelPtr,error){
 	tx := GetFistUnNilTX()
 	if tx != nil{
 		return this.QueryManyWithTx(tx,sql,obj,params...)
@@ -141,7 +141,7 @@ func (this *DataSource)QueryOneMapWithTX(tx *sql.Tx,sql string,params ...interfa
 
 
 // 查询多个
-func (this *DataSource)QueryManyWithTx(tx *sql.Tx,sql string,obj ModelPtr,params ...interface{})(interface{},error){
+func (this *DataSource)QueryManyWithTx(tx *sql.Tx,sql string,obj ModelPtr,params ...interface{})([]ModelPtr,error){
 	rows,err := tx.Query(sql,params...)
 	if err != nil{
 		return nil,err
@@ -280,6 +280,9 @@ func mapToObj(m map[string]interface{},obj ModelPtr) ModelPtr{
 		f := newObjValue.FieldByName(k)
 		if f.IsValid(){
 			f.Set(reflect.ValueOf(v))
+		}else{
+			// 根据标签赋值
+			fullByTagValue(objType,newObj,k,v)
 		}
 	}
 	return newObj
@@ -305,5 +308,20 @@ func InterfaceToValue(v interface{},t *sql.ColumnType) interface{}{
 	case "float64":result = v.(float64);break;
 	}
 	return result
+}
+
+func fullByTagValue(vt reflect.Type,vv interface{},tagValue string, v interface{}){
+	vt1 := vt.Elem()
+	fn := vt1.NumField()
+
+	for i := 0; i < fn; i++{
+		tag := vt1.Field(i).Tag
+		curTagValue := tag.Get(DB_STRUCT_TAG)
+		if curTagValue == tagValue{
+			// 类型不同不尝试强转
+			fv := common.InterfacePtrToInterface(v)
+			reflect.ValueOf(vv).Elem().Field(i).Set(reflect.ValueOf(fv))
+		}
+	}
 }
 
