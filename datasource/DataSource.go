@@ -20,6 +20,6 @@ const (
 	)
 
 const (
-	DB_STRUCT_TAG string = "col"
+	DB_STRUCT_TAG = "col"
 )
 
