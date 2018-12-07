@@ -3,14 +3,15 @@ package datasource
 import "database/sql"
 
 func (this *DataSource)Delete(sqlStr string,params ...interface{})(int64,error) {
-	var err error
-	var res sql.Result
-	tx := GetFistUnNilTX()
-	if tx == nil{
-		res,err = tx.Exec(sqlStr,params...)
-	}else {
-		res, err = this.Exec(sqlStr, params...)
+	res, err := this.Exec(sqlStr, params...)
+	if err !=  nil{
+		return 0,err
 	}
+	return res.RowsAffected()
+}
+
+func (this *DataSource)DeleteWithTX(tx *sql.Tx,sqlStr string,params ...interface{})(int64,error) {
+	res,err := tx.Exec(sqlStr,params...)
 	if err !=  nil{
 		return 0,err
 	}
