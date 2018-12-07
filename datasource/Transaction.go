@@ -9,9 +9,9 @@ import (
 	"time"
 	"reflect"
 )
-// 暂不支持事务嵌套
+// 取消自动事务，不提供自动
 
-func init(){
+func initFunc(){
 	// 防止泄露检查
 	txMap = make(map[int][]*sql.Tx,0)
 	go func(){
