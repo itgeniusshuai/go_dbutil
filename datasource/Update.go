@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"fmt"
 	"strings"
+	"github.com/itgeniusshuai/go_common/common"
 )
 
 func (this *DataSource)Update(sqlStr string,params ...interface{})(int64,error) {
@@ -23,7 +24,7 @@ func (this *DataSource)Update(sqlStr string,params ...interface{})(int64,error) 
 	return res.RowsAffected()
 }
 
-func (this *DataSource)UpdateSelectiveBySelect(tableName string,objMap map[string]interface{},whereMap map[string]interface{},params ...interface{})(int64,error) {
+func (this *DataSource)UpdateBySelect(tableName string,objMap map[string]interface{},whereMap map[string]interface{},params ...interface{})(int64,error) {
 	var sqlBuf bytes.Buffer
 	sqlBuf.WriteString(" update ")
 	sqlBuf.WriteString(tableName)
@@ -73,6 +74,14 @@ func (this *DataSource)UpdateByMap(sql string,params map[string]interface{}) (in
 	}
 	return res.RowsAffected();
 }
+
+func (this *DataSource)UpdateByObj(sql string,obj interface{}) (int64,error){
+	// 替换#{}里面的内容
+	paramMap := common.ObjToMapByTagName(obj,DB_STRUCT_TAG)
+	return this.UpdateByMap(sql,paramMap)
+}
+
+
 
 
 
