@@ -8,6 +8,7 @@ import (
 	"strings"
 	"github.com/itgeniusshuai/go_common/common"
 	"time"
+	"github.com/kataras/iris/core/errors"
 )
 
 func GetDataSource(user string,pwd string,ip string,port int,dbName string) *DataSource{
@@ -30,15 +31,14 @@ func (this *DataSource)QueryOne(sql string,obj ModelPtr,params ...interface{})(M
 	if err != nil{
 		return nil,err
 	}
-	types,_ := rows.ColumnTypes()
-	if rows.Next(){
-		resMap,err := fullMap(rows,types)
-		if err != nil{
-			return nil,err
-		}
-		return mapToObj(resMap,obj),nil
+	res,err := fullObjList(rows,obj)
+	if err != nil{
+		return nil,err
 	}
-	return nil,nil
+	if len(res) > 1{
+		return nil,errors.New("expect one but find many")
+	}
+	return res[0],nil
 }
 
 // 查询单个
@@ -51,15 +51,14 @@ func (this *DataSource)QueryOneMap(sql string,params ...interface{})(map[string]
 	if err != nil{
 		return nil,err
 	}
-	types,_ := rows.ColumnTypes()
-	var resMap map[string]interface{}
-	if rows.Next(){
-		resMap,err = fullMap(rows,types)
-		if err != nil{
-			return nil,err
-		}
+	res,err := fullMapList(rows)
+	if err != nil{
+		return nil,err
 	}
-	return resMap,nil
+	if len(res) > 0 {
+		return nil,errors.New("expect one but find many")
+	}
+	return res[0],nil
 }
 
 
@@ -73,13 +72,7 @@ func (this *DataSource)QueryMany(sql string,obj ModelPtr,params ...interface{})(
 	if err != nil{
 		return nil,err
 	}
-	var resList []ModelPtr
-	for rows.Next(){
-		m := fullObj(obj,rows)
-		fmt.Println(m)
-		resList = append(resList, m)
-	}
-	return resList,nil
+	return fullObjList(rows,obj)
 }
 
 // 查询多个
@@ -92,16 +85,7 @@ func (this *DataSource)QueryManyMap(sql string,params ...interface{})([]map[stri
 	if err != nil{
 		return nil,err
 	}
-	types,_ := rows.ColumnTypes()
-	var resList []map[string]interface{}
-	for rows.Next(){
-		m,err := fullMap(rows,types)
-		if err != nil{
-			return nil,err
-		}
-		resList = append(resList, m)
-	}
-	return resList,nil
+	return fullMapList(rows)
 }
 
 // 查询单个
@@ -110,15 +94,14 @@ func (this *DataSource)QueryOneWitchTX(tx *sql.Tx,sql string,obj ModelPtr,params
 	if err != nil{
 		return nil,err
 	}
-	types,_ := rows.ColumnTypes()
-	if rows.Next(){
-		resMap,err := fullMap(rows,types)
-		if err != nil{
-			return nil,err
-		}
-		return mapToObj(resMap,obj),nil
+	res,err := fullObjList(rows,obj)
+	if err != nil{
+		return nil,err
 	}
-	return nil,nil
+	if len(res) > 1{
+		return nil,errors.New("expect one but find many")
+	}
+	return res[0],nil
 }
 
 // 查询单个
@@ -128,15 +111,14 @@ func (this *DataSource)QueryOneMapWithTX(tx *sql.Tx,sql string,params ...interfa
 	if err != nil{
 		return nil,err
 	}
-	var resMap map[string]interface{}
-	types,_ := rows.ColumnTypes()
-	if rows.Next(){
-		resMap,err = fullMap(rows,types)
-		if err != nil{
-			return nil,err
-		}
+	res,err := fullMapList(rows)
+	if err != nil{
+		return nil,err
 	}
-	return resMap,nil
+	if len(res) > 1{
+		return nil,errors.New("expect one but find many")
+	}
+	return res[0],err
 }
 
 
@@ -146,13 +128,7 @@ func (this *DataSource)QueryManyWithTx(tx *sql.Tx,sql string,obj ModelPtr,params
 	if err != nil{
 		return nil,err
 	}
-	var resList []ModelPtr
-	for rows.Next(){
-		m := fullObj(obj,rows)
-		fmt.Println(m)
-		resList = append(resList, m)
-	}
-	return resList,nil
+	return fullObjList(rows,obj)
 }
 
 // 查询多个
@@ -161,16 +137,7 @@ func (this *DataSource)QueryManyMapWithTx(tx *sql.Tx,sql string,params ...interf
 	if err != nil{
 		return nil,err
 	}
-	var resList []map[string]interface{}
-	types,_ := rows.ColumnTypes()
-	for rows.Next(){
-		m,err := fullMap(rows,types)
-		if err != nil{
-			return nil,err
-		}
-		resList = append(resList, m)
-	}
-	return resList,nil
+	return fullMapList(rows)
 }
 
 func (this *DataSource)QueryNum(sqlStr string,params ...interface{})(int64,error){
@@ -179,7 +146,7 @@ func (this *DataSource)QueryNum(sqlStr string,params ...interface{})(int64,error
 	var num int64
 	var rows *sql.Rows
 	if tx != nil{
-		rows,err = this.Query(sqlStr,params...)
+		rows,err = tx.Query(sqlStr,params...)
 	}else{
 		rows,err = this.Query(sqlStr,params...)
 	}
@@ -189,24 +156,91 @@ func (this *DataSource)QueryNum(sqlStr string,params ...interface{})(int64,error
 	return num,err
 }
 
+func fullMapList(rows *sql.Rows)([]map[string]interface{},error){
+	var resList []map[string]interface{}
+	for rows.Next(){
+		m,err := fullMap(rows)
+		if err != nil{
+			return nil,err
+		}
+		resList = append(resList, m)
+	}
+	return resList,nil
+}
+
+func fullObjList(rows *sql.Rows,obj ModelPtr)([]ModelPtr,error){
+	var resList []ModelPtr
+	for rows.Next(){
+		m := fullObj(obj,rows)
+		fmt.Println(m)
+		resList = append(resList, m)
+	}
+	return resList,nil
+}
 
 func fullObj(obj ModelPtr,rows *sql.Rows) ModelPtr{
-	types,_ := rows.ColumnTypes()
-	resMap,err := fullMap(rows,types)
+	resMap,err := fullMap(rows)
 	if err != nil{
 		return nil
 	}
 	return mapToObj(resMap,obj)
 }
 
-func fullMap(rows *sql.Rows,types []*sql.ColumnType) (map[string]interface{},error){
+func fullMap(rows *sql.Rows) (map[string]interface{},error){
+	types,err := rows.ColumnTypes()
 	columns,err := rows.Columns()
 	if err != nil{
 		return nil,err
 	}
 	var columnNum = len(columns)
 	var resList = make([]interface{},columnNum)
-	values := make([]interface{}, len(columns))
+	values := getValuesByScanType(types)
+	for i := range values {
+		resList[i] = values[i]
+	}
+	rows.Scan(resList...)
+	var resMap = make(map[string]interface{})
+	for i,e := range columns{
+		resMap[e] = resList[i]
+	}
+	return resMap,nil
+}
+
+// 将map中与结构体中对应的field对应上
+func mapToObj(m map[string]interface{},obj ModelPtr) ModelPtr{
+	objType := reflect.TypeOf(obj)
+	newObj := reflect.New(objType.Elem()).Interface()
+	newObjValue := reflect.ValueOf(newObj).Elem()
+
+	for k,v := range m{
+		f := newObjValue.FieldByName(k)
+		if f.IsValid(){
+			f.Set(reflect.ValueOf(v))
+		}else{
+			// 根据标签赋值
+			fullByTagValue(objType,newObj,k,v)
+		}
+	}
+	return newObj
+}
+
+func fullByTagValue(vt reflect.Type,vv interface{},tagValue string, v interface{}){
+	vt1 := vt.Elem()
+	fn := vt1.NumField()
+
+	for i := 0; i < fn; i++{
+		tag := vt1.Field(i).Tag
+		curTagValue := tag.Get(DB_STRUCT_TAG)
+		if curTagValue == tagValue{
+			// 类型不同不尝试强转
+			fv := common.InterfacePtrToInterface(v)
+			reflect.ValueOf(vv).Elem().Field(i).Set(reflect.ValueOf(fv))
+		}
+	}
+}
+
+func getValuesByScanType(types []*sql.ColumnType)[]interface{}{
+	values := make([]interface{}, len(types))
 
 	for i,_ := range values{
 		typeName := types[i].ScanType().String()
@@ -259,69 +293,6 @@ func fullMap(rows *sql.Rows,types []*sql.ColumnType) (map[string]interface{},err
 			values[i] = reflect.New(types[i].ScanType()).Interface()
 		}
 	}
-	for i := range values {
-		resList[i] = values[i]
-	}
-	rows.Scan(resList...)
-	var resMap = make(map[string]interface{})
-	for i,e := range columns{
-		resMap[e] = resList[i]
-	}
-	return resMap,nil
-}
-
-// 将map中与结构体中对应的field对应上
-func mapToObj(m map[string]interface{},obj ModelPtr) ModelPtr{
-	objType := reflect.TypeOf(obj)
-	newObj := reflect.New(objType.Elem()).Interface()
-	newObjValue := reflect.ValueOf(newObj).Elem()
-
-	for k,v := range m{
-		f := newObjValue.FieldByName(k)
-		if f.IsValid(){
-			f.Set(reflect.ValueOf(v))
-		}else{
-			// 根据标签赋值
-			fullByTagValue(objType,newObj,k,v)
-		}
-	}
-	return newObj
-}
-
-func InterfaceToValue(v interface{},t *sql.ColumnType) interface{}{
-	var result = v
-	fmt.Println(t.DatabaseTypeName())
-	dbType := strings.ToLower(t.DatabaseTypeName())
-	switch dbType {
-	case "int":result = v.(int);break;
-	case "int8":result = v.(int8);break;
-	case "int16":result = v.(int16);break;
-	case "int32":result = v.(int32);break;
-	case "int64":result = v.(int64);break;
-	case "uint":result = v.(uint);break;
-	case "uint8":result = v.(uint8);break;
-	case "uint16":result = v.(uint16);break;
-	case "uint32":result = v.(uint32);break;
-	case "uint64":result = v.(uint64);break;
-	case "string":result = v.(string);break;
-	case "float32":result = v.(float32);break;
-	case "float64":result = v.(float64);break;
-	}
-	return result
-}
-
-func fullByTagValue(vt reflect.Type,vv interface{},tagValue string, v interface{}){
-	vt1 := vt.Elem()
-	fn := vt1.NumField()
-
-	for i := 0; i < fn; i++{
-		tag := vt1.Field(i).Tag
-		curTagValue := tag.Get(DB_STRUCT_TAG)
-		if curTagValue == tagValue{
-			// 类型不同不尝试强转
-			fv := common.InterfacePtrToInterface(v)
-			reflect.ValueOf(vv).Elem().Field(i).Set(reflect.ValueOf(fv))
-		}
-	}
+	return values
 }
 
