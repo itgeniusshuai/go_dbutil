@@ -25,7 +25,7 @@ func (this *DataSource)Update(sqlStr string,params ...interface{})(int64,error) 
 
 func (this *DataSource)UpdateSelectiveBySelect(tableName string,objMap map[string]interface{},whereMap map[string]interface{},params ...interface{})(int64,error) {
 	var sqlBuf bytes.Buffer
-	sqlBuf.WriteString(" udpate ")
+	sqlBuf.WriteString(" update ")
 	sqlBuf.WriteString(tableName)
 	sqlBuf.WriteString(" set ")
 	var updateStrBuf []string
@@ -60,5 +60,20 @@ func (this *DataSource)UpdateSelectiveBySelect(tableName string,objMap map[strin
 	}
 	return res.RowsAffected()
 }
+
+func (this *DataSource)UpdateByMap(sql string,params map[string]interface{}) (int64,error){
+	// 替换#{}里面的内容
+	reSql,paramList,err := ReplaceSqlPlaceHolders(sql,params)
+	if err != nil{
+		return 0,err
+	}
+	res,err := this.Exec(reSql,paramList...)
+	if err != nil{
+		return 0,err
+	}
+	return res.RowsAffected();
+}
+
+
 
 
